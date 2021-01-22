@@ -60,14 +60,14 @@ jobs:
       - name: Set environment to acc
         id: acc_values_file
         shell: bash
-        if: contains(github.ref, "release")
-        run: echo "k8s/openstad/environments/acc.values.yaml" > GITOPS_VALUES_FILE
+        if: contains(github.ref, 'release')
+        run: echo "k8s/openstad/environments/acc.values.yaml" >> $GITOPS_VALUES_FILE
 
       - name: Set environment to production
         id: prod_values_file
         shell: bash
-        if: startsWith(github.ref, 'refs/tags/') ||contains(github.ref, "master")
-        run: echo "k8s/openstad/environments/prod.values.yaml" > GITOPS_VALUES_FILE
+        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master'
+        run: echo "k8s/openstad/environments/prod.values.yaml" >> $GITOPS_VALUES_FILE
 
       - name: Run build script
         run: docker build -t  .
