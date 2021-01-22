@@ -1,0 +1,87 @@
+name: Gitops
+
+# Run this workflow every time a new commit pushed to your repository
+on:
+  push:
+    branches:
+      - development
+      - feature/*
+      - release/*
+      - release
+      - master
+  create:
+    tags:
+      - '*'
+
+jobs:
+  gitops:
+    environment: gitops
+    env:
+      HELM_REPO_NAME: openstad-kubernetes
+      HELM_CHART_FOLDER: k8s/openstad
+      GIT_USER_EMAIL: github@ci.push
+      GIT_USER_NAME: GitHub
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      HELM_REPO: ${{ secrets.HELM_REPO }}
+      HELM_REPO_WITH_TOKEN: ${{ secrets.HELM_REPO_WITH_TOKEN }}
+      GITOPS_RELEASE_BRANCH: ${{ secrets.GITOPS_RELEASE_BRANCH }}
+      BRANCH_REF: ${{ github.ref }}
+      IMAGE_TAG: ${{ secrets.DOCKER_PUBLIC_USERNAME }}/${{ secrets.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.current_branch }}-${{ steps.vars.outputs.sha_short }}-${{ github.run_id}}
+      GITOPS_VALUES_FILE: k8s/openstad/environments/dev.values.yaml
+
+    name: gitops commit
+    runs-on: ubuntu-latest
+
+    services:
+      docker:
+        image: docker
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install yq
+        run: sudo snap install yq --channel=v3/stable
+
+      - name: Set SHA & branch
+        id: vars
+        shell: bash
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=current_branch::$(git branch --show-current | sed "s/\//-/g")"
+
+      - name: Check outputs
+        shell: bash
+        run: |
+          echo ${{ steps.vars.outputs.sha_short }}
+          echo ${{ steps.vars.outputs.current_branch }}
+          echo $IMAGE_TAG
+
+      - name: Set environment to acc
+        id: acc_values_file
+        shell: bash
+        if: contains(github.ref, "release")
+        run: echo "k8s/openstad/environments/acc.values.yaml" > GITOPS_VALUES_FILE
+
+      - name: Set environment to production
+        id: prod_values_file
+        shell: bash
+        if: startsWith(github.ref, 'refs/tags/') ||contains(github.ref, "master")
+        run: echo "k8s/openstad/environments/prod.values.yaml" > GITOPS_VALUES_FILE
+
+      - name: Run build script
+        run: docker build -t  .
+        shell: bash
+
+      - name: Run test script
+        run: docker run -e CI=true $IMAGE_TAG  npm run test -- --coverage
+        shell: bash
+
+      - name: Run docker push script
+        run: |
+          sudo chmod a+x ./gitops_push
+          ./gitops_push
+        shell: bash
+        env:
+          GITOPS_VALUES_FILE: k8s/openstad/environments/dev.values.yaml
