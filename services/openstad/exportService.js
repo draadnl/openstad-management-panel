@@ -30,7 +30,7 @@ exports.export = async (openstadData, domain, requestBody, dir, filename) => {
       throw new Error('Not able to fetch attachments because the current site is down');
     }
     const cmsUrl = protocol + '://' + domain;
-    await Promise.all(openstadData.cmsData.attachments.map(async (filename) => {
+    for (const filename of openstadData.cmsData.attachments) {
       try {
         const options = { timeout: 8000 };
         const siteConfig = openstadData.apiData.site.config;
@@ -41,11 +41,11 @@ exports.export = async (openstadData, domain, requestBody, dir, filename) => {
           options.headers = headers;
         }
         const res = await fetch(cmsUrl + '/uploads/attachments/' + filename, { timeout: 8000 })
-        return await fs.writeFile(dir + '/attachments/' + filename, await res.buffer());
+        await fs.writeFile(dir + '/attachments/' + filename, await res.buffer());
       } catch (error) {
         console.error(error.message, filename)
       }
-    }));
+    }
   }
 
   //mv mongo export to export-dir/mongo
