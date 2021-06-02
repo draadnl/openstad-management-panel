@@ -19,6 +19,7 @@ const authFields        = [{key: 'name'}, {key: 'requiredUserFields'}, {key: 'au
 const userApiSettingFields        = require('../../config/auth').userApiSettingFields;
 
 
+
 module.exports = function(app) {
   /**
    * Handle updating required fields & authTypes of the default oAuth API connected to this site
@@ -28,13 +29,24 @@ module.exports = function(app) {
     userClientMw.withOneForSite,
     (req, res, next) => {
       let data = req.userApiClient;
+      const authTypes = req.body.authTypes ? req.body.authTypes : [];
+      const requiredFields = req.body.requiredUserFields ? req.body.requiredUserFields : [];
+
+      const emailAuthTypesEnabled = authTypes.indexOf('Url') !== -1 ||authTypes.indexOf('Local') !== -1;
+      const emailRequired = requiredFields.indexOf('email') !== -1;
 
       if (!req.body.authTypes) {
         req.flash('error', { msg: 'At least one authentication method is required'});
         res.redirect(req.header('Referer')  || appUrl);
+
+      // only allow emailRequired if email is validated through an auth type like email url of password
+      } else if (emailRequired && !emailAuthTypesEnabled) {
+        req.flash('error', { msg: 'Select an authentication method that uses e-mail if you want to make e-mail an required field.'});
+        res.redirect(req.header('Referer')  || appUrl);
       } else {
         data.requiredUserFields = req.body.requiredUserFields ? req.body.requiredUserFields : [];
         data.authTypes = req.body.authTypes;
+        data.twoFactorRoles = req.body.twoFactorRoles ? req.body.twoFactorRoles : [];
 
         userClientApi
           .update(req.userApiClient.clientId, data)
@@ -60,6 +72,10 @@ module.exports = function(app) {
         req.body.config = req.userApiClient.config;
       } else if (req.userApiClient.config &&  req.body.config && req.body.config.requiredFields ) {
         req.userApiClient.config.requiredFields = req.body.config.requiredFields;
+      } else if (req.userApiClient.config &&  req.body.config && req.body.config.twoFactor ) {
+          req.userApiClient.config.twoFactor = req.body.config.twoFactor;
+      } else if (req.userApiClient.config &&  req.body.config && req.body.config.configureTwoFactor ) {
+          req.userApiClient.config.configureTwoFactor = req.body.config.configureTwoFactor;
       } else if (req.userApiClient.config && req.body.config) {
         userApiSettingFields.forEach((field) => {
           if (req.body.config[field.key]) {

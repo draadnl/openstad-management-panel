@@ -1,10 +1,18 @@
 {% set noSidebar = true %}
-
+{% set noQuickLinks = true %}
 {% extends 'user-layout.html' %}
 
 {% block body %}
 <style>
   {{data.widget.formattedContainerStyles}}
+
+  .layout {
+	margin-top: 5px;
+  }
+
+  .jss2 {
+	  margin-top: 18px;
+  }
 
   .layout header {
     position: relative !important;
@@ -27,10 +35,10 @@
       margin-top: 0;
   }
 </style>
-<script src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
-<link rel="stylesheet" href="/css/admin-react.css">
-<script src="/js/admin-react.js"></script>
+<script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/openstad-react-admin@0.1.31/dist/css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/openstad-react-admin@0.1.31/dist/js/index.js"></script>
 <div id="{{data.widget.containerId}}" class="osc-component">
 	<div id="admin-root"></div>
 </div>
@@ -49,41 +57,47 @@
       restApi: {
         url: '/api/site/{{site.id}}'
       },
+	  statsApi:{
+		  url: '/stats/site/{{site.id}}/overview'
+	  },
       csrf:"{{csrfToken}}",
       resources: {
-        idea: {
-          active: true
-        },
-        user: {
-          active: true
-        },
-        product: {
-          active: false
-        },
-        order: {
-          active: false
-        },
-        vote: {
-          active: true
-        },
-        article: {
-          active: false
-        },
-        argument: {
-          active: true
-        },
-        area: {
-          active: true
-        },
-        site: {
-          active: true
-        },
-        newsletterSignup: {
-          active: true
-        },
-        tag: {
-          active: true
-        },
+		  idea: {
+			  active: true
+		  },
+		  user: {
+			  active: true
+		  },
+		  product: {
+			  active: false
+		  },
+		  order: {
+			  active: false
+		  },
+		  vote: {
+			  active: true
+		  },
+		  article: {
+			  active: false
+		  },
+		  argument: {
+			  active: true
+		  },
+		  area: {
+			  active: true
+		  },
+		  site: {
+			  active: true
+		  },
+		  newsletterSignup: {
+			  active: true
+		  },
+		  choicesGuide: {
+			  active: true
+		  },
+		  tag: {
+			  active: true
+		  },
       }
     };
 

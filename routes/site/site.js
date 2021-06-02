@@ -7,6 +7,7 @@ const externalSiteMw    = require('../../middleware/externalSite');
 const siteMw            = require('../../middleware/site');
 const voteMw            = require('../../middleware/vote');
 const userClientMw      = require('../../middleware/userClient');
+const roleClientMw      = require('../../middleware/role');
 
 //services
 const userClientApi     = require('../../services/userClientApi');
@@ -22,25 +23,20 @@ const siteFields        = [{key: 'title'}];
 const deleteMongoDb               = require('../../services/mongo').deleteDb;
 const dbExists                    = require('../../services/mongo').dbExists;
 const copyDb                      = require('../../services/mongo').copyMongoDb;
+
 const userApiSettingFields        = require('../../config/auth').userApiSettingFields;
 const userApiRequiredFields       = require('../../config/auth').userApiRequiredFields;
+const twoFactorConfigureFields    = require('../../config/auth').twoFactorConfigureFields;
+const twoFactorValidateFields     = require('../../config/auth').twoFactorValidateFields;
+
 const siteConfigSchema            = require('../../config/site').configSchema;
 
 //models
 const NewSite = require('../../services/openstad/models/newSite');
 
-const cleanUrl = (url) => {
-  return url.replace('http://', '').replace('https://', '').replace(/\/$/, "");
-}
-
-const ensureUrlHasProtocol = (url) => {
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    // if no protocol, assume https
-    url = 'https://' + url;
-  }
-
-  return url;
-}
+const cleanUrl                = require('../../utils/cleanUrl');
+const ensureUrlHasProtocol    = require('../../utils/ensureUrlHasProtocol');
+const formatBaseDomain        = require('../../utils/formatBaseDomain');
 
 module.exports = function(app){
 
@@ -85,13 +81,16 @@ module.exports = function(app){
   app.get('/admin/site/:siteId/:page',
     siteMw.withOne,
     ideaMw.allForSite,
+    roleClientMw.withAll,
     userClientMw.withOneForSite,
     (req, res, next) => {
       res.render(`site/${req.params.page}.html`,  {
         siteConfigSchema: siteConfigSchema,
         pageName: req.params.page,
         userApiSettingFields: userApiSettingFields,
-        userApiRequiredFields: userApiRequiredFields
+        userApiRequiredFields: userApiRequiredFields,
+        twoFactorConfigureFields: twoFactorConfigureFields,
+        twoFactorValidateFields: twoFactorValidateFields
       });
     }
   );
@@ -117,7 +116,10 @@ module.exports = function(app){
     async (req, res, next) => {
       try {
 
-        const domain = req.body['domain-type'] === 'subdomain' ? `${req.body.domain}.${process.env.WILDCARD_HOST}` : req.body.domain;
+        let domain = req.body['domain-type'] === 'subdomain' ? `${req.body.domain}.${process.env.WILDCARD_HOST}` : req.body.domain;
+        const protocol = req.body.protocol ? req.body.protocol : 'https://';
+
+        domain = protocol + cleanUrl(domain);
 
         const newSite = new NewSite(domain, req.body.siteName, req.body.fromEmail, req.body.fromName);
 
@@ -220,15 +222,24 @@ module.exports = function(app){
     (req, res, next) => {
 
       const siteData = req.site;
-      const domain = cleanUrl(req.body.productionUrl);
+      const domain = cleanUrl(req.body.productionUrl).toLowerCase();
       const apiDomain = cleanUrl(apiUrl);
-      const domainWithProtocol = ensureUrlHasProtocol(req.body.productionUrl);
+
+      // sites can run on domain.com/site1, but when checking domain should be only base domain
+      const baseDomain = formatBaseDomain(domain);
+
+      const domainWithProtocol = ensureUrlHasProtocol(req.body.productionUrl).toLowerCase();
+
       const promises = [];
 
       // set domain to site api
+      // this probably should be changed names in future, since sites can also run under domain.com/subdir
+      // url would be more fitting
       siteData.domain = domain;
     ///  siteData.config.cms.url = siteData.config.cms.url ? [domain] : [];
-      siteData.config.allowedDomains = siteData.config.allowedDomains ? [domain] : [];
+
+
+      siteData.config.allowedDomains = baseDomain ? [baseDomain] : [];
 
       // update CMS urls
       if (siteData.config.cms) {
@@ -248,7 +259,7 @@ module.exports = function(app){
 
         promises.push(userClientApi.update(req.userApiClient.clientId, clientData));
       }
-      
+
       if (process.env.KUBERNETES_NAMESPACE) {
         promises.push(k8Ingress.edit(siteData.config.cms.dbName, domain));
       }
@@ -259,6 +270,49 @@ module.exports = function(app){
       Promise.all(promises)
         .then(function (response) {
           req.flash('success', { msg: 'Url aangepast!'});
+          res.redirect(req.header('Referer')  || appUrl);
+        })
+        .catch(function (err) {
+          console.error(err);
+          req.flash('error', { msg: 'Er gaat iets mis!'});
+          res.redirect(req.header('Referer')  || appUrl);
+        });
+
+    }
+  );
+
+
+  /**
+   * Edit url of the website, this has specific route because it needs to happen at specific points
+   * @type {[type]}
+   */
+  app.post('/admin/site/:siteId/smtp',
+    siteMw.withOne,
+    userClientMw.withOneForSite,
+    (req, res, next) => {
+
+      const clientConfig =  clientData.config;
+
+      const smtpSettings = {
+
+      }
+
+      clientConfig.smtp = smtpSettings;
+      clientData
+
+      promises.push(userClientApi.update(req.userApiClient.clientId, clientData));
+
+
+      if (process.env.KUBERNETES_NAMESPACE) {
+        promises.push(k8Ingress.edit(siteData.config.cms.dbName, domain));
+      }
+
+      /**
+       * Import all promises
+       */
+      Promise.all(promises)
+        .then(function (response) {
+          req.flash('success', { msg: 'Aangepast!'});
           res.redirect(req.header('Referer')  || appUrl);
         })
         .catch(function (err) {
@@ -287,7 +341,7 @@ module.exports = function(app){
 
       if (req.site.config && req.site.config.cms && req.site.config.cms.dbName) {
         deleteActions.push(deleteMongoDb(req.site.config.cms.dbName));
-        
+
         if (process.env.KUBERNETES_NAMESPACE) {
           deleteActions.push(k8Ingress.delete(req.site.config.cms.dbName));
         }
