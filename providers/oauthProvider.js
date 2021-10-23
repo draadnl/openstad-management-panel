@@ -73,6 +73,7 @@ exports.createOauth = async (newSite, oauthData) => {
       authTypes: data.authTypes,
       requiredUserFields: data.requiredUserFields,
       exposedUserFields: data.exposedUserFields || [],
+      twoFactorRoles: data.twoFactorRoles || [],
       siteUrl: newSite.getDomainWithProtocol(),
       redirectUrl: newSite.getDomainWithProtocol(),
       allowedDomains: [
