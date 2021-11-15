@@ -114,6 +114,13 @@ const types = [
         default: '',
         type: 'textarea'
       },
+      {
+        label: 'E-mail Styling',
+        info: 'Add any custom CSS styling to be applied to the e-mail template',
+        key: 'emailStyling',
+        default: '',
+        type: 'textarea'
+      },
     ]
   },
 
