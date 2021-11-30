@@ -63,7 +63,7 @@ jobs:
         run: echo "k8s/openstad/environments/dev.values.yaml" >> $GITOPS_VALUES_FILE
 
       - name: Set environment to acc
-        id: dev_values_file
+        id: acc_values_file
         shell: bash
         if: contains(github.ref, 'release')
         run: echo "k8s/openstad/environments/acc.values.yaml" >> $GITOPS_VALUES_FILE
