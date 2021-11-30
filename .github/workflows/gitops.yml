@@ -4,8 +4,7 @@ name: Gitops
 on:
   push:
     branches:
-      - development
-      - feature/*
+      - develop
       - release/*
       - release
       - master
@@ -56,6 +55,24 @@ jobs:
           echo ${{ steps.vars.outputs.sha_short }}
           echo ${{ steps.vars.outputs.current_branch }}
           echo $IMAGE_TAG
+
+      - name: Set environment to dev
+        id: dev_values_file
+        shell: bash
+        if: contains(github.ref, 'develop')
+        run: echo "k8s/openstad/environments/dev.values.yaml" >> $GITOPS_VALUES_FILE
+
+      - name: Set environment to acc
+        id: dev_values_file
+        shell: bash
+        if: contains(github.ref, 'release')
+        run: echo "k8s/openstad/environments/acc.values.yaml" >> $GITOPS_VALUES_FILE
+
+      - name: Set environment to production
+        id: prod_values_file
+        shell: bash
+        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master'
+        run: echo "k8s/openstad/environments/prod.values.yaml" >> $GITOPS_VALUES_FILE
 
       - name: Run build script
         run: docker build -t ${{ secrets.DOCKER_PUBLIC_USERNAME }}/${{ secrets.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.current_branch }}-${{ steps.vars.outputs.sha_short }}-${{ github.run_id}} .
