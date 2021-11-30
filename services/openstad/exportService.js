@@ -1,7 +1,6 @@
 const fs = require('fs').promises;
 const tar = require('tar');
 const fetch = require('node-fetch');
-
 const lookupDns = require('../../utils/lookupDns');
 const protocol = process.env.FORCE_HTTP ? 'http' : 'https';
 
@@ -31,10 +30,22 @@ exports.export = async (openstadData, domain, requestBody, dir, filename) => {
       throw new Error('Not able to fetch attachments because the current site is down');
     }
     const cmsUrl = protocol + '://' + domain;
-    await Promise.all(openstadData.cmsData.attachments.map(async (filename) => {
-      const res = await fetch(cmsUrl + '/uploads/attachments/' + filename)
-      return await fs.writeFile(dir + '/attachments/' + filename, await res.buffer());
-    }));
+    for (const filename of openstadData.cmsData.attachments) {
+      try {
+        const options = { timeout: 8000 };
+        const siteConfig = openstadData.apiData.site.config;
+        if (siteConfig.basicAuth && siteConfig.basicAuth.active) {
+          const headers = new Headers();
+          const basicAuthToken = Buffer.from(`${siteConfig.basicAuth.user}:${siteConfig.basicAuth.password}`, 'base64').toString('utf-8');
+          headers.set('Authorization', `Basic ${basicAuthToken}`);
+          options.headers = headers;
+        }
+        const res = await fetch(cmsUrl + '/uploads/attachments/' + filename, { timeout: 8000 })
+        await fs.writeFile(dir + '/attachments/' + filename, await res.buffer());
+      } catch (error) {
+        console.error(error.message, filename)
+      }
+    }
   }
 
   //mv mongo export to export-dir/mongo
