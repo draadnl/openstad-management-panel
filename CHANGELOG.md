@@ -2,6 +2,7 @@
 
 ## Unreleased
 * Validate email address on special characters and reject the follow characters: ! and =
+* Add email image header setting field to authentication tab (using filepond to upload image via the image server)
 
 ## v0.20.0
 * Rewrite of ingress logic and adding support for subdir sites (domain.com/site1 &&domain.com/site2) for Kubernetes environments
@@ -20,7 +21,7 @@
 ## v0.16.0 (2020-05-25)
 * Fix domain validation on site creation.
 * Add phonenumber and local auth as experimental auth methods
-* Turn on choice guide in react admin panel 
+* Turn on choice guide in react admin panel
 
 ## v0.15.0 (2020-04-26)
 * Add two factor configuration of text on screens and what role per oAuth client should validate with a Two Factor token
@@ -32,7 +33,7 @@
 
 ## v0.14.0 (2020-04-06)
 * Cut the name for mongodb name shorter, in same cases it was too long causing an db creation error
-* On input even in domain field strip special characters 
+* On input even in domain field strip special characters
 * Add options for selecting  for voting type: count per theme and budgetting per theme in site vote setting
 
 ## v0.13.0 (2021-03-17)
@@ -81,7 +82,7 @@
 
 ## v0.8.0-PRERLEASE (2020-17-07)
 * Set content-length with Bufferlength for body api proxy, otherwise it breaks with special characters
-* Add slash to formatting tmp directory in site export  
+* Add slash to formatting tmp directory in site export
 * Update corresponding ingress when site URL is changed
 * Delete corresponding ingress when a site is deleted
 
