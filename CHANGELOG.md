@@ -1,7 +1,8 @@
 # Changelog
 
-## unreleased
+## Unreleased
 * Fix site delete error in k8s
+* Add email image header setting field to authentication tab (using filepond to upload image via the image server)
 
 ## v0.21.0
 * Update react admin
