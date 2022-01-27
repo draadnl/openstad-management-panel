@@ -86,4 +86,3 @@ jobs:
         shell: bash
         env:
           IMAGE_TAG: ${{ secrets.DOCKER_PUBLIC_USERNAME }}/${{ secrets.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.current_branch }}-${{ steps.vars.outputs.sha_short }}-${{ github.run_id}}
-          GITOPS_VALUES_FILE: k8s/openstad/environments/dev.values.yaml
