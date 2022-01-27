@@ -291,8 +291,8 @@ module.exports = function(app){
         let siteData = await openstadSiteDataService.collectData({
           uniqueSiteId: exportId,
           siteIdToCopy: req.params.siteId,
-          includeChoiceGuide: req.body['choice-guides'],
-          includeCmsAttachments: req.body['cms-attachments']
+          includeChoiceGuide: !!req.body['choice-guides'],
+          includeCmsAttachments: !!req.body['cms-attachments']
         });
 
         // exists?
