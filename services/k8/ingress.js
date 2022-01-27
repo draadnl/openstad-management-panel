@@ -70,6 +70,7 @@ const getHostnameFromRegex = (url) => {
 const getK8sApi = () => {
   const kc = new k8s.KubeConfig();
   kc.loadFromCluster();
+  
   return k8sApi = kc.makeApiClient(k8s.NetworkingV1beta1Api);
 }
 
@@ -168,7 +169,7 @@ const getIngressBody = (ingressName, domain, addWww, secretName) => {
       },
       name: ingressName,
       annotations: {
-        'cert-manager.io/cluster-issuer': 'openstad-letsencrypt-prod', // Todo: make this configurable
+        'cert-manager.io/cluster-issuer': process.env.KUBERNETES_CLUSTER_ISSUER || 'openstad-letsencrypt-prod',
         'kubernetes.io/ingress.class': 'nginx',
         'nginx.ingress.kubernetes.io/from-to-www-redirect': "true",
         'nginx.ingress.kubernetes.io/proxy-body-size': '128m',
@@ -184,8 +185,8 @@ more_set_headers "Referrer-Policy: same-origin";`
         http: {
           paths: [{
             backend: {
-              serviceName: 'openstad-frontend', // Todo: make this configurable
-              servicePort: 4444 // Todo: make this configurable
+              serviceName: process.env.KUBERNETES_FRONTEND_SERVICE_NAME || 'openstad-frontend',
+              servicePort: process.env.KUBERNETES_FRONTEND_SERVICE_PORT ? parseInt(process.env.KUBERNETES_FRONTEND_SERVICE_PORT) : 4444
             },
             path: '/'
           }]
@@ -506,7 +507,3 @@ const processIngressForDomain = async (domain, sites, ingressName) => {
  * @returns {Promise<{response: http.IncomingMessage; body: NetworkingV1beta1Ingress}>}
  */
 exports.add = add;
-
-
-
-
