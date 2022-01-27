@@ -333,8 +333,9 @@ exports.ensureIngressForAllDomains = async () => {
     }
 
   });
-
-  const systemIngresses = ['openstad-admin', "openstad-frontend", "openstad-image", "openstad-api", "openstad-auth"];
+  
+  // Prefix system ingresses with the kubernetes namespace
+  const systemIngresses = ['admin', 'frontend', 'image', 'api', 'auth'].map(el => `${process.env.KUBERNETES_NAMESPACE}-${el}`);
 
   // filter all domains present
   let domainsToDelete = Object.keys(domainsInIngress).filter((domainInIngress) => {
@@ -345,6 +346,11 @@ exports.ensureIngressForAllDomains = async () => {
     const ingressData = domainsInIngress[domainInIngress];
     // never delete ingress from system
     return !systemIngresses.find(ingressName => ingressName === ingressData.ingressName)
+  }).filter(domainInIngress => {
+    // Check if first 10 chars of ingress name is a number, if so, it's a generated ingress and we can delete it
+    // This is a quickfix to prevent ingresses from being deleted which are created by hand
+    const ingressName = domainsInIngress[domainInIngress].ingressName;
+    return ingressName && ingressName.length > 10 && ingressName.split('').splice(0, 10).every(char => !Number.isNaN(parseInt(char)));
   })
 
   console.log('domainsToCreate', domainsToCreate);
