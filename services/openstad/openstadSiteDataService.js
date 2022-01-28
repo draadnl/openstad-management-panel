@@ -186,7 +186,17 @@ exports.collectDataFromFiles = async function(importDir) {
       return JSON.parse(result.toString());
     })
   );
-  const cmsAttachments = await fs.readdir(importDir + '/attachments');
+  
+  let cmsAttachments = [];
+  
+  try {
+    cmsAttachments = await fs.readdir(importDir + '/attachments');
+  } catch (e) {
+    // Check if attachments dir doesn't exist
+    if (e.code !== 'ENOENT') {
+      throw e;
+    }
+  }
 
   return new SiteData(siteToCopy, choiceGuides, cmsAttachments, importDir + '/mongo', oauthClients);
 
