@@ -2,6 +2,7 @@
 ## v0.9.0 (2020-11-17)
 * When creating a user, in the role editing table also display the site domain next to the client ID
 * Bugfix: fix importing site by adding site name field
+* For new sites set 2FA on by default for admin, editors & moderators
 
 ## v0.8.2 (2020-11-03)
 * Update react-admin
