@@ -39,7 +39,7 @@ RUN npm config set unsafe-perm true
 #RUN npm install bcrypt
 
 # Install all npm packages
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Remove unused packages only used for building.
 RUN apk del g++ make && rm -rf /var/cache/apk/*
