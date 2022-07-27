@@ -22,7 +22,7 @@ ENV BASIC_AUTH_PASSWORD=""
 ENV PUBLIC_IP=""
 
 # Install all base dependencies.
-RUN apk add --no-cache --update g++ make python musl-dev bash
+RUN apk add --no-cache --update g++ make python3 musl-dev bash
 
 # Set the working directory to the root of the container
 WORKDIR /home/app
