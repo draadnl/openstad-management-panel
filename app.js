@@ -239,9 +239,11 @@ app.get('/admin/copy/:oldName/:newName', (req, res) => {
     });
 });
 
-app.listen(process.env.PORT, function() {
+const server = app.listen(process.env.PORT, function() {
   console.log('Express server listening on port ' + process.env.PORT);
 });
+
+server.setTimeout(1000 * 60 * 10); // 10 minutes
 
 async function start() {
   let openstadReactAdminCdn = await cdns.contructReactAdminCdn();
