@@ -84,8 +84,13 @@ exports.writeDataToTmpDir = async function ({ exportDir, siteData, fromDomain })
       // }
       const cmsUrl = protocol + '://' + fromDomain;
       await Promise.all(siteData.cmsData.attachments.map(async (filename) => {
-        const res = await fetch(cmsUrl + '/uploads/attachments/' + filename)
-        return await fs.writeFile(exportDir + '/attachments/' + filename, await res.buffer());
+        
+        try {
+          const res = await fetch(cmsUrl + '/uploads/attachments/' + filename)
+          return await fs.writeFile(exportDir + '/attachments/' + filename, await res.buffer());
+        } catch (e) {
+          console.error(`Error fetching attachment ${filename} from ${cmsUrl}, skipping this file.`, error);
+        }
       }));
     }
 
