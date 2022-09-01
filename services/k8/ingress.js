@@ -70,8 +70,7 @@ const getHostnameFromRegex = (url) => {
 const getK8sApi = () => {
   const kc = new k8s.KubeConfig();
   kc.loadFromCluster();
-  
-  return k8sApi = kc.makeApiClient(k8s.NetworkingV1beta1Api);
+  return k8sApi = kc.makeApiClient(k8s.NetworkingV1Api);
 }
 
 
@@ -150,8 +149,11 @@ const formatIngressName = (domain) => {
 /**
  * Return the body to create / replace a namespaced ingress through the API
  *
+ * @param ingressName
  * @param domain
- * @returns {{metadata: {name: *, annotations: {"cert-manager.io/cluster-issuer": string, "kubernetes.io/ingress.class": string}}, apiVersions: string, kind: string, spec: {rules: [{host: *, http: {paths: [{path: string, backend: {servicePort: number, serviceName: string}}]}}], tls: [{secretName: *, hosts: [*]}]}}}
+ * @param addWww
+ * @param secretName
+ * @returns {{metadata: {name, annotations: {"nginx.ingress.kubernetes.io/proxy-body-size": string, "nginx.ingress.kubernetes.io/configuration-snippet": string, "nginx.ingress.kubernetes.io/from-to-www-redirect": string, "kubernetes.io/ingress.class": string}, labels: {type: string}}, apiVersions: string, kind: string, spec: {rules: [{host, http: {paths: [{path: string, backend: {service: {port: {number: (number|number)}, name: (string|string)}}, pathType: string}]}}], tls: [{secretName: *, hosts: *[]}]}}}
  */
 const getIngressBody = (ingressName, domain, addWww, secretName) => {
   const domains = [domain];
@@ -160,8 +162,8 @@ const getIngressBody = (ingressName, domain, addWww, secretName) => {
     domains.push('www.' + domain);
   }
 
-  return {
-    apiVersions: 'networking.k8s.io/v1beta1',
+  const ingressBody = {
+    apiVersions: 'networking.k8s.io/v1',
     kind: 'Ingress',
     metadata: {
       labels: {
@@ -169,7 +171,6 @@ const getIngressBody = (ingressName, domain, addWww, secretName) => {
       },
       name: ingressName,
       annotations: {
-        'cert-manager.io/cluster-issuer': process.env.KUBERNETES_CLUSTER_ISSUER || 'openstad-letsencrypt-prod',
         'kubernetes.io/ingress.class': 'nginx',
         'nginx.ingress.kubernetes.io/from-to-www-redirect': "true",
         'nginx.ingress.kubernetes.io/proxy-body-size': '128m',
@@ -184,11 +185,16 @@ more_set_headers "Referrer-Policy: same-origin";`
         host: domain,
         http: {
           paths: [{
+            path: '/',
+            pathType: 'Prefix',
             backend: {
-              serviceName: process.env.KUBERNETES_FRONTEND_SERVICE_NAME || 'openstad-frontend',
-              servicePort: process.env.KUBERNETES_FRONTEND_SERVICE_PORT ? parseInt(process.env.KUBERNETES_FRONTEND_SERVICE_PORT) : 4444
-            },
-            path: '/'
+              service: {
+                name: process.env.KUBERNETES_FRONTEND_SERVICE_NAME || 'openstad-frontend',
+                port: {
+                  number: process.env.KUBERNETES_FRONTEND_SERVICE_PORT ? parseInt(process.env.KUBERNETES_FRONTEND_SERVICE_PORT) : 4444
+                }
+              }
+            }
           }]
         }
       }],
@@ -198,6 +204,12 @@ more_set_headers "Referrer-Policy: same-origin";`
       }]
     }
   }
+  
+  if (process.env.KUBERNETES_CLUSTER_ISSUER_ENABLED) {
+    ingressBody.metadata.annotations['cert-manager.io/cluster-issuer'] = process.env.KUBERNETES_CLUSTER_ISSUER || 'openstad-letsencrypt-prod';
+  }
+  
+  return ingressBody;
 };
 const getAll = async () => {
   let response = await getK8sApi().listNamespacedIngress(process.env.KUBERNETES_NAMESPACE);
@@ -333,9 +345,10 @@ exports.ensureIngressForAllDomains = async () => {
     }
 
   });
+
+  const ingressPrefix = (process.env.KUBERNETES_NAMESPACE ? process.env.KUBERNETES_NAMESPACE : 'openstad');
   
-  // Prefix system ingresses with the kubernetes namespace
-  const systemIngresses = ['admin', 'frontend', 'image', 'api', 'auth'].map(el => `${process.env.KUBERNETES_NAMESPACE}-${el}`);
+  const systemIngresses = [`${ingressPrefix}-admin`, `${ingressPrefix}-frontend`, `${ingressPrefix}-image`, `${ingressPrefix}-api`, `${ingressPrefix}-auth`];
 
   // filter all domains present
   let domainsToDelete = Object.keys(domainsInIngress).filter((domainInIngress) => {
@@ -346,11 +359,6 @@ exports.ensureIngressForAllDomains = async () => {
     const ingressData = domainsInIngress[domainInIngress];
     // never delete ingress from system
     return !systemIngresses.find(ingressName => ingressName === ingressData.ingressName)
-  }).filter(domainInIngress => {
-    // Check if first 10 chars of ingress name is a number, if so, it's a generated ingress and we can delete it
-    // This is a quickfix to prevent ingresses from being deleted which are created by hand
-    const ingressName = domainsInIngress[domainInIngress].ingressName;
-    return ingressName && ingressName.length > 10 && ingressName.split('').splice(0, 10).every(char => !Number.isNaN(parseInt(char)));
   })
 
   console.log('domainsToCreate', domainsToCreate);
