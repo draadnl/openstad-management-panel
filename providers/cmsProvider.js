@@ -112,6 +112,10 @@ const renameAttachments = async ({ cmsData, domain, attachmentsDir, mongoPath })
 
   console.log('import attachments in data');
 
+  if (cmsData.attachments.length == 0) {
+    return;
+  }
+  
   try {
 
     // collect attachements - without derived
