@@ -164,6 +164,7 @@ module.exports = function(app){
    */
   app.post('/admin/site/copy',
     formatDomainFromBody,
+    siteMw.increasedTimeout,
     async (req, res, next) => {
       try {
 
@@ -192,11 +193,11 @@ module.exports = function(app){
         console.log('creating new site :', newSite.title );
 
         const site = await openstadSiteDataService.createSite({
-          user: req.user, 
+          user: req.user,
           dataDir: exportDir,
-          newSite, 
-          apiData: siteData.apiData, 
-          cmsData: siteData.cmsData, 
+          newSite,
+          apiData: siteData.apiData,
+          cmsData: siteData.cmsData,
           oauthData: siteData.oauthData
         });
 
@@ -230,6 +231,7 @@ module.exports = function(app){
     '/admin/site/import',
     siteMw.withAll,
     userClientMw.withAll,
+    siteMw.increasedTimeout,
     upload.single('import_file'),
     formatDomainFromBody,
     async (req, res, next) => {
@@ -254,9 +256,9 @@ module.exports = function(app){
         const site = await openstadSiteDataService.createSite({
           user: req.user,
           dataDir: importDir,
-          newSite, 
-          apiData: siteData.apiData, 
-          cmsData: siteData.cmsData, 
+          newSite,
+          apiData: siteData.apiData,
+          cmsData: siteData.cmsData,
           oauthData: siteData.oauthData
         });
 
@@ -288,6 +290,7 @@ module.exports = function(app){
   app.post(
     '/admin/site/:siteId/export',
     siteMw.withOne,
+    siteMw.increasedTimeout,
     async(req, res, next) => {
 
       try {

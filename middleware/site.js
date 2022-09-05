@@ -134,3 +134,9 @@ exports.withAll = (req, res, next) => {
       next(err);
     });
 }
+
+exports.increasedTimeout = (req, res, next) => {
+  const timeout = process.env.INCREASED_TIMEOUT_IN_MS || 1000 * 60 * 5; // Defaults to 5 minutes
+  req.setTimeout(timeout);
+  next();
+}
