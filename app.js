@@ -73,27 +73,42 @@ app.get('/', (req, res) => {
 // redirect the index page to the admin section
 app.use('/admin', (req, res, next) => {
   const unauthorized = (req, res) => {
-      var challengeString = 'Basic realm=OpenstadAdmin';
-      res.set('WWW-Authenticate', challengeString);
-      return res.status(401).send('Authentication required.');
+    console.log('req', JSON.stringify(req), 'res', JSON.stringify(res));
+    var challengeString = 'Basic realm=OpenstadAdmin';
+    res.set('WWW-Authenticate', challengeString);
+    return res.status(401).send('Authentication required.');
   }
 
   const basicAuthUser = process.env.BASIC_AUTH_USER;
   const basicAuthPassword = process.env.BASIC_AUTH_PASSWORD;
 
+  console.log('Verwachte gebruikersnaam:', basicAuthUser);
+  console.log('Verwacht wachtwoord:', basicAuthPassword);
 
   if (basicAuthUser && basicAuthPassword) {
     var user = auth(req);
 
-    if (!user || !compare(user.name, basicAuthUser) || ! compare(user.pass, basicAuthPassword)) {
+    if (!user) {
+      console.log('Geen gebruikersgegevens ontvangen');
+      return unauthorized(req, res);
+    }
+
+    console.log('Ontvangen gebruikersnaam:', user.name);
+    console.log('Ontvangen wachtwoord:', user.pass);
+
+    if (!compare(user.name, basicAuthUser) || !compare(user.pass, basicAuthPassword)) {
+      console.log('Authenticatie mislukt');
       unauthorized(req, res);
     } else {
+      console.log('Authenticatie geslaagd');
       next();
     }
   } else {
+    console.log('Geen Basic Auth configuratie gevonden');
     next();
   }
 });
+
 
 
 app.use((req, res, next) => {
