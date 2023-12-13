@@ -204,11 +204,11 @@ more_set_headers "Referrer-Policy: same-origin";`
       }]
     }
   }
-  
+
   if (process.env.KUBERNETES_CLUSTER_ISSUER_ENABLED) {
     ingressBody.metadata.annotations['cert-manager.io/cluster-issuer'] = process.env.KUBERNETES_CLUSTER_ISSUER || 'openstad-letsencrypt-prod';
   }
-  
+
   return ingressBody;
 };
 const getAll = async () => {
@@ -347,7 +347,7 @@ exports.ensureIngressForAllDomains = async () => {
   });
 
   const ingressPrefix = (process.env.KUBERNETES_NAMESPACE ? process.env.KUBERNETES_NAMESPACE : 'openstad');
-  
+
   const systemIngresses = [`${ingressPrefix}-admin`, `${ingressPrefix}-frontend`, `${ingressPrefix}-image`, `${ingressPrefix}-api`, `${ingressPrefix}-auth`];
 
   // filter all domains present
@@ -390,7 +390,7 @@ exports.ensureIngressForAllDomains = async () => {
       console.log('domainToUpdate', domainToUpdate)
       const ingressName = domainsToUpdate[domainToUpdate].ingressName;
 
-    //  console.log('Update domain ', domainToUpdate, ' with ingress name ', ingressName)
+      //  console.log('Update domain ', domainToUpdate, ' with ingress name ', ingressName)
       await processIngressForDomain(domainToUpdate, sites, ingressName);
     } catch (e) {
       console.log('Errrr, e', e);
@@ -423,35 +423,29 @@ const processIngressForDomain = async (domain, sites, ingressName) => {
   const sitesForDomain = getSitesForDomain(sites, domain);
   const addWww = shouldDomainHaveWww(sites, domain);
 
-  let ipAddressForDomain;
-  let ipAddressForWWWDomain;
+  let ipAddressForDomain = '87.233.137.211';
+  let ipAddressForWWWDomain = '87.233.137.211';
 
-  try {
-    ipAddressForDomain = await dnsLookUp(domain);
-    ipAddressForWWWDomain = await dnsLookUp('www.' + domain);
-  } catch(e ) {
-    console.log('Error checking dns for domain', domain);
-  }
-
-  const dnsIsSet = ipAddressForDomain && ipAddressForDomain === serverPublicIP;
-  const dnsIsSetForWWW  = ipAddressForWWWDomain && ipAddressForWWWDomain === serverPublicIP;
-
-  console.log('ipAddressForDomain', ipAddressForDomain);
-  console.log('serverPublicIP', serverPublicIP);
-
-  console.log('dnsIsSet dnsIsSet', dnsIsSet);
-  console.log('dnsIsSetForWWW dnsIsSetForWWW', dnsIsSetForWWW);
+  // try {
+  //   ipAddressForDomain = await dnsLookUp(domain);
+  //   ipAddressForWWWDomain = await dnsLookUp('www.' + domain);
+  // } catch(e ) {
+  //   console.log('Error checking dns for domain', domain);
+  // }
+  //
+  // const dnsIsSet = ipAddressForDomain && ipAddressForDomain === serverPublicIP;
+  // const dnsIsSetForWWW  = ipAddressForWWWDomain && ipAddressForWWWDomain === serverPublicIP;
 
 
   // dns is valid when www is not required and default dns isset, otherwise we also need to check if www dns isset;
-  const dnsIsValid = (!addWww && dnsIsSet) || (addWww && dnsIsSet && dnsIsSetForWWW);
+  // const dnsIsValid = (!addWww && dnsIsSet) || (addWww && dnsIsSet && dnsIsSetForWWW);
 
   const ingressConfigFields = {
-    dnsIsSet: dnsIsSet,
-    dnsIsSetForWWW: dnsIsSetForWWW,
+    dnsIsSet: true,
+    dnsIsSetForWWW: true,
     ipAddressForDomain: ipAddressForDomain,
     ipAddressForWWWDomain: ipAddressForWWWDomain,
-    dnsIsValid: dnsIsValid,
+    dnsIsValid: true,
   }
 
   console.log('processIngressForDomain ingressConfigFields', ingressConfigFields);
