@@ -311,7 +311,7 @@ exports.ensureIngressForAllDomains = async () => {
         return config.hosts.includes(domain);
       });
 
-      const updateTlsSecretname = !!tslConfigForDomain.secretName !== !!secretNameForDomain;
+      const updateTlsSecretname = tslConfigForDomain && !!tslConfigForDomain.secretName !== !!secretNameForDomain;
 
       if(addWww || updateTlsSecretname) {
         domainsToUpdate[domain] = {
