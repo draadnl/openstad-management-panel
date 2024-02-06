@@ -125,7 +125,7 @@ const getSitesForDomain = (sites, domain) => {
  * @returns {Promise<*>}
  */
 const deleteIngress = async (ingressName) => {
-  return getK8sApi().deleteNamespacedIngress(ingressName, process.env.KUBERNETES_NAMESPACE);
+  return true;
 };
 
 const add = async (ingressName, domain, addWww, tslSecret) => {
@@ -310,6 +310,7 @@ exports.ensureIngressForAllDomains = async () => {
       const tslConfigForDomain = ingress.spec && ingress.spec.tls && ingress.spec.tls.find((config) => {
         return config.hosts.includes(domain);
       });
+      
 
       const updateTlsSecretname = tslConfigForDomain && !!tslConfigForDomain.secretName !== !!secretNameForDomain;
 
@@ -346,21 +347,6 @@ exports.ensureIngressForAllDomains = async () => {
 
   });
 
-  const ingressPrefix = (process.env.KUBERNETES_NAMESPACE ? process.env.KUBERNETES_NAMESPACE : 'openstad');
-  
-  const systemIngresses = [`${ingressPrefix}-admin`, `${ingressPrefix}-frontend`, `${ingressPrefix}-image`, `${ingressPrefix}-api`, `${ingressPrefix}-auth`];
-
-  // filter all domains present
-  let domainsToDelete = Object.keys(domainsInIngress).filter((domainInIngress) => {
-    // when domain is in ingress, but not in the database, remove it.
-
-    return !domains.find(domain => domain === domainInIngress);
-  }).filter((domainInIngress) => {
-    const ingressData = domainsInIngress[domainInIngress];
-    // never delete ingress from system
-    return !systemIngresses.find(ingressName => ingressName === ingressData.ingressName)
-  })
-
   console.log('domainsToCreate', domainsToCreate);
   console.log('domainsToUpdate', domainsToUpdate);
 
@@ -396,24 +382,6 @@ exports.ensureIngressForAllDomains = async () => {
       console.log('Errrr, e', e);
     }
   }
-
-  console.log('domainsToDelete', domainsToDelete);
-
-
-  // filter to make sure unique domains
-  domainsToDelete = domainsToDelete.filter((value, index, self) => {
-    return self.indexOf(value) === index;
-  });
-
-  domainsToDelete.forEach(async (domain) => {
-    const ingressData = domainsInIngress[domain];
-    try {
-      console.log('Delete ingress with name ', ingressData);
-      await deleteIngress(ingressData.ingressName);
-    } catch (e) {
-      console.log('Error when deleting ingress', e)
-    }
-  });
 };
 
 
