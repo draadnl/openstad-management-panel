@@ -349,6 +349,23 @@ exports.ensureIngressForAllDomains = async () => {
 
   console.log('domainsToCreate', domainsToCreate);
   console.log('domainsToUpdate', domainsToUpdate);
+  
+  const ingressPrefix = (process.env.KUBERNETES_NAMESPACE ? process.env.KUBERNETES_NAMESPACE : 'openstad');
+  
+  const systemIngresses = [
+    `${ingressPrefix}-admin`,
+    `${ingressPrefix}-frontend`,
+    `${ingressPrefix}-image`,
+    `${ingressPrefix}-api`,
+    `${ingressPrefix}-auth`,
+    `openstad-admin`,
+    `openstad-frontend`,
+    `openstad-image`,
+    `openstad-api`,
+    `openstad-auth`,
+  ];
+  
+  
 
   /**
    * Get all site objects with domain as hostname
@@ -373,6 +390,11 @@ exports.ensureIngressForAllDomains = async () => {
 
   for(let domainToUpdate of Object.keys(domainsToUpdate)) {
     try {
+      if (systemIngresses.includes(domainsToUpdate[domainToUpdate].ingressName)) {
+        console.log('Skip system ingress', domainToUpdate);
+        continue;
+      }
+      
       console.log('domainToUpdate', domainToUpdate)
       const ingressName = domainsToUpdate[domainToUpdate].ingressName;
 
