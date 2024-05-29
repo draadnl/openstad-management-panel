@@ -173,7 +173,7 @@ exports.export = (dbName, dirname) => {
 
   return new Promise((resolve, reject) => {
 
-    let uri = url + '/' + dbName;
+    let uri = getConnectionString(dbName);
     dirname = dirname || './tmp';
 
     mongoBackup({
@@ -192,7 +192,7 @@ exports.import = (dbName, dirname) => {
 
   return new Promise((resolve, reject) => {
 
-    let uri = url + '/' + dbName;
+    let uri = getConnectionString(dbName);
     dirname = dirname || './tmp';
 
     mongoRestore({
