@@ -249,6 +249,6 @@ async function start() {
   let openstadReactAdminCdn = await cdns.contructReactAdminCdn();
   app.set('openstadReactAdminCdn', openstadReactAdminCdn);
   module.exports = app;
-} 
+}
 
 start();
