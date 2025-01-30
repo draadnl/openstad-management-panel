@@ -1,4 +1,4 @@
-# An admin panel for creating & managing sites in the openstad ecosystem
+# An admin panel for creating & managing sites in the openstad ecosystem.
 
 ## Prerequisites
  - [Git](https://git-scm.com/)
